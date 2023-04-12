@@ -1,5 +1,5 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { filterContact } from 'redux/contactSlice';
+import { filterContact } from 'redux/filterSlice';
 import {
   FilterContainer,
   FilterLabel,
@@ -8,10 +8,10 @@ import {
 
 const Filter = () => {
   const dispatch = useDispatch();
-  const filter = useSelector(state => state.contacts.filter);
+  const filter = useSelector(state => state.filter.value);
 
-  const filterChange = event => {
-    dispatch(filterContact(event.currentTarget.value));
+  const filterChange = e => {
+    dispatch(filterContact(e.currentTarget.value));
   };
   return (
     <FilterContainer>

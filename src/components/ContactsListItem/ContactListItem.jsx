@@ -1,6 +1,7 @@
+import React from 'react';
+import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
-import { useDispatch } from 'react-redux';
-import { deleteContact } from 'redux/contactSlice';
+import { useDeleteContactMutation } from 'redux/contactsApi';
 import {
   ContactItem,
   ContactName,
@@ -8,15 +9,19 @@ import {
 } from './ContactListItem.styled';
 
 const ContactsListItem = ({ id, name, number }) => {
-  const dispatch = useDispatch();
-  const contactDelete = id => dispatch(deleteContact(id));
+  const [deleteContact] = useDeleteContactMutation();
+
+  const handleDeleteContact = async id => {
+    await deleteContact(id).unwrap();
+    toast.success(`Contact ${name} successfully deleted!`);
+  };
 
   return (
     <ContactItem id={id}>
       <ContactName>
         {name} - {number}
       </ContactName>
-      <ContactButton type="button" onClick={() => contactDelete(id)}>
+      <ContactButton type="submit" onClick={() => handleDeleteContact(id)}>
         Delete
       </ContactButton>
     </ContactItem>

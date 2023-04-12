@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { nanoid } from '@reduxjs/toolkit';
-import { useSelector, useDispatch } from 'react-redux';
-import { addContact } from 'redux/contactSlice';
+import { toast } from 'react-toastify';
+import {
+  useAddContactMutation,
+  useGetContactsApiQuery,
+} from 'redux/contactsApi';
 import {
   FormContainer,
   FormLabel,
@@ -10,11 +12,11 @@ import {
   FormButton,
 } from './ContactForm.styled';
 
-export default function ContactForm({ onSubmit }) {
+export default function ContactForm() {
   const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
-  const dispatch = useDispatch();
-  const contacts = useSelector(state => state.contacts.items);
+  const [phone, setPhone] = useState('');
+  const [addContact] = useAddContactMutation();
+  const { data } = useGetContactsApiQuery();
 
   const handleChange = e => {
     const prop = e.currentTarget.name;
@@ -22,39 +24,35 @@ export default function ContactForm({ onSubmit }) {
       case 'name':
         setName(e.currentTarget.value);
         break;
-      case 'number':
-        setNumber(e.currentTarget.value);
+      case 'phone':
+        setPhone(e.currentTarget.value);
         break;
       default:
         throw new Error('Error');
     }
   };
 
-  const handleSubmit = e => {
-    e.preventDefault();
-
-    const data = {
-      id: nanoid(),
-      name: name,
-      number: number,
-    };
+  const handleAddContact = async event => {
+    event.preventDefault();
 
     if (
-      contacts.find(
-        contact => contact.name.toLowerCase() === data.name.toLowerCase()
-      )
+      data.find(contact => contact.name.toLowerCase() === name.toLowerCase())
     ) {
       setName('');
-      setNumber('');
-      return alert(`Contact ${data.name} is already in phonebook list!`);
+      setPhone('');
+      return toast.error(`Contact ${name} is already in your phonebook!`);
     }
-    dispatch(addContact(data));
-    setName('');
-    setNumber('');
+
+    if (name && phone) {
+      await addContact({ name: name, phone: phone }).unwrap();
+      setName('');
+      setPhone('');
+      return toast.success(`Contact ${name} added successfully!`);
+    }
   };
 
   return (
-    <FormContainer onSubmit={handleSubmit}>
+    <FormContainer onSubmit={handleAddContact}>
       <FormLabel>
         Name
         <InputName
@@ -62,7 +60,7 @@ export default function ContactForm({ onSubmit }) {
           onChange={handleChange}
           type="text"
           name="name"
-          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
+          pattern="[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
           title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
           required
         />
@@ -70,10 +68,10 @@ export default function ContactForm({ onSubmit }) {
       <FormLabel>
         Number
         <InputNumber
-          value={number}
+          value={phone}
           onChange={handleChange}
           type="tel"
-          name="number"
+          name="phone"
           pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
           title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
           required
