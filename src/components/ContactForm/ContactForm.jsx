@@ -1,83 +1,108 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
+import { useState } from 'react';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import { Typography } from '@mui/material';
+
 import {
   useAddContactMutation,
-  useGetContactsApiQuery,
-} from 'redux/contactsApi';
-import {
-  FormContainer,
-  FormLabel,
-  InputName,
-  InputNumber,
-  FormButton,
-} from './ContactForm.styled';
+  useGetContactsQuery,
+} from 'redux/contactsSlice';
 
-export default function ContactForm() {
+export const ContactForm = () => {
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [number, setNumber] = useState('');
+  const { data: contacts } = useGetContactsQuery();
   const [addContact] = useAddContactMutation();
-  const { data } = useGetContactsApiQuery();
 
-  const handleChange = e => {
-    const prop = e.currentTarget.name;
-    switch (prop) {
-      case 'name':
-        setName(e.currentTarget.value);
-        break;
-      case 'phone':
-        setPhone(e.currentTarget.value);
-        break;
-      default:
-        throw new Error('Error');
+  const onAddContact = contact => {
+    if (contacts && contacts.some(item => item.name === contact.name)) {
+      alert(`${contact.name} is already in contacts!`);
+      return;
+    }
+    addContact(contact);
+  };
+
+  const onChangeInput = event => {
+    const { name, value } = event.target;
+    if (name === 'name') {
+      setName(value);
+    }
+    if (name === 'number') {
+      setNumber(value);
     }
   };
 
-  const handleAddContact = async event => {
+  const onSubmitForm = event => {
     event.preventDefault();
 
-    if (
-      data.find(contact => contact.name.toLowerCase() === name.toLowerCase())
-    ) {
-      setName('');
-      setPhone('');
-      return toast.error(`Contact ${name} is already in your phonebook!`);
+    if (name && number) {
+      onAddContact({
+        name,
+        number,
+      });
+    } else {
+      alert('The name anf number fields are empty, fill them in!');
     }
 
-    if (name && phone) {
-      await addContact({ name: name, phone: phone }).unwrap();
-      setName('');
-      setPhone('');
-      return toast.success(`Contact ${name} added successfully!`);
-    }
+    reset(event);
+  };
+
+  const reset = event => {
+    setName('');
+    setNumber('');
+    event.currentTarget.reset();
   };
 
   return (
-    <FormContainer onSubmit={handleAddContact}>
-      <FormLabel>
-        Name
-        <InputName
-          value={name}
-          onChange={handleChange}
+    <Box textAlign="center">
+      <Typography
+        style={{
+          fontSize: '40px',
+          fontWeight: 'bold',
+          lineHeight: '2.8',
+          marginBottom: '20px',
+        }}
+        variant="h3"
+      >
+        Phonebook
+      </Typography>
+      <Box
+        component="form"
+        display="flex"
+        justifyContent="center"
+        flexDirection="column"
+        sx={{
+          '& > :not(style)': { m: 1 },
+        }}
+        autoComplete="off"
+        onSubmit={onSubmitForm}
+      >
+        <TextField
+          sx={{ width: '50ch' }}
           type="text"
           name="name"
-          pattern="[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-          title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
+          onChange={onChangeInput}
+          id="filled-basic"
+          label="Name"
+          variant="filled"
           required
         />
-      </FormLabel>
-      <FormLabel>
-        Number
-        <InputNumber
-          value={phone}
-          onChange={handleChange}
+        <TextField
+          sx={{ width: '50ch' }}
+          value={number}
           type="tel"
-          name="phone"
-          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
+          name="number"
+          id="filled-basic"
+          label="Number"
+          variant="filled"
+          onChange={onChangeInput}
           required
         />
-      </FormLabel>
-      <FormButton type="submit">Add contact</FormButton>
-    </FormContainer>
+        <Button disabled={!name || !number} type="submit">
+          Add Contact
+        </Button>
+      </Box>
+    </Box>
   );
-}
+};
